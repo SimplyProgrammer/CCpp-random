@@ -6,8 +6,10 @@ _BEGIN
 read r1
 load r1
 
-jz end // Check 0 and end
+jgz program // End if 0 or less else proceed to program
+jmp end;
 
+program:
 load 1 // Init r2,r3 to =1
 store r2
 store r3;
