@@ -6,7 +6,7 @@ _BEGIN
 read r1
 load r1
 
-jgz program // End if 0 or less else proceed to program
+jgz program // End if input is 0 or less else proceed to program
 jmp end;
 
 program:
@@ -66,6 +66,11 @@ int main()
 	int r1; // Input
 	cin >> r1;
 
+	if (r1 > 0)
+		goto program;
+	goto end;
+
+	program:
 	int r2 = 1, r3 = 1; // pow3 , pow6
 
 	loop:
