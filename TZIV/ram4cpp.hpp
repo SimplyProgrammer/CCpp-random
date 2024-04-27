@@ -17,9 +17,9 @@
  * 	labelDeclaration: <standard C label declaration>
  * 
  * Mem addressing:
- * 	Constant:	i	|	add 1	| Will add 1 to acc
- * 	Direct:		ri	|	add r1	| Will add add value of register 1 to acc
- * 	Indirect:	*ri	|	add *r1	| Will add add value of register with index of value stored in r1
+ * 	Constant:	i	|	add 1	| Will add 1 to acc, =1 in RAM
+ * 	Direct:		ri	|	add r1	| Will add add value of register 1 to acc, 1 in RAM
+ * 	Indirect:	*ri	|	add *r1	| Will add add value of register with index of value stored in r1, *1 in RAM
  * 
  * Note that ; are optional but in some cases are required before or after label declaration...
 */
