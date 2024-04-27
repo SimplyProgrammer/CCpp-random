@@ -41,7 +41,7 @@ loop:
 		mul 3 // r2 *= 3
 		store r2;
 
-	condition: // if (r2 > r1 && r3 >r1) goto end else loop
+	condition: // if (r2 > r1 && r3 > r1) goto end else loop
 		load r2
 		sub r1 // Sub input to bring it down for compare
 		jgz secondCheck // End if r2 > input (r1)
