@@ -6,15 +6,20 @@
  * Your RAM program must start with _BEGIN and end with _END.
  * 
  * Syntax:
- * program: (instruction | labelDeclaration)*
+ * 	program: (instruction | labelDeclaration)*
 
- * instruction: mnemonic ' '+ (int | reg | label)
- * mnemonic: <any valid RAM instruction name in lowercase>
- * int: <positive integer>
- * reg: r [0-999]
- * label: <valid declared label>
+ * 	instruction: mnemonic ' '+ (int | reg | label)
+ * 	mnemonic: <any valid RAM instruction name in lowercase>
+ * 	int: <positive integer>
+ * 	reg: r [0-999]
+ * 	label: <valid declared label>
  * 
- * labelDeclaration: <standard C label declaration>
+ * 	labelDeclaration: <standard C label declaration>
+ * 
+ * Mem addressing:
+ * 	Constant:	i	|	add 1	| Will add 1 to acc
+ * 	Direct:		ri	|	add r1	| Will add add value of register 1 to acc
+ * 	Indirect:	*ri	|	add *r1	| Will add add value of register with index of value stored in r1
  * 
  * Note that ; are optional but in some cases are required before or after label declaration...
 */
