@@ -1,7 +1,7 @@
 // xhupkap
 
 #include "ram4cpp.hpp"
-_BEGIN
+_BEGIN(4) // We need 4 registers (including acc)
 
 read r1
 load r1
