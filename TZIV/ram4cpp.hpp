@@ -1,6 +1,6 @@
 /**
  * License notice:
- * 	Author: https://github.com/SimplyProgrammer
+ * 	Author: https://github.com/SimplyProgrammer/Ram4Cpp
  * 	2024 - All rights reserved
  * 	You are forbidden to redistribute this software by other means than link above, or resounding it as your own in any other way!
  * 
@@ -94,13 +94,13 @@ struct Reg
 		other.value = value;
 	}
 
-	friend std::ostream& operator <<(std::ostream& os, Reg& reg) 
+	friend ostream& operator <<(ostream& os, Reg& reg) 
 	{
 		os << reg.value;
 		return os;
 	}
 
-	friend std::istream& operator >>(std::istream& is, Reg& reg) 
+	friend istream& operator >>(istream& is, Reg& reg) 
 	{
 		is >> reg.value;
 		return is;
@@ -115,12 +115,22 @@ Reg& operator *(Reg self) // Indirect addressing
 	return _r[self.value];
 }
 
-#if !defined(HALT_MESSAGE)
+#ifndef HALT_MESSAGE
 	#define HALT_MESSAGE "Halted!"
 #endif
 
-#if !defined(OUT_SEPARATOR)
+#ifndef OUT_SEPARATOR
 	#define OUT_SEPARATOR ", "
+#endif
+
+#if defined(_WIN32) || defined(_WIN64) || defined(OS_Windows)
+	#ifndef WAIT_AFTER_HALT
+		#define WAIT_AFTER_HALT cout << endl; system("pause");
+	#endif
+#else
+	#ifndef WAIT_AFTER_HALT
+		#define WAIT_AFTER_HALT cin.get(); cin.get();
+	#endif
 #endif
 
 #define read ;cin >> 
@@ -147,7 +157,7 @@ Reg& operator *(Reg self) // Indirect addressing
 #define jmp jump
 #define halt ;statusCode = 0; goto __END;
 
-#define _BEGIN(countOfRegs) int main() {\
+#define _RAM_BEGIN(countOfRegs) {\
 			unsigned int countOfPrints = 0, statusCode = 1;\
 			Reg r[countOfRegs > 256 ? countOfRegs : 256] = {0};\
 			_r = r;\
@@ -158,15 +168,14 @@ Reg& operator *(Reg self) // Indirect addressing
 			&r200 = r[200], &r201 = r[201], &r202 = r[202], &r203 = r[203], &r204 = r[204], &r205 = r[205], &r206 = r[206], &r207 = r[207], &r208 = r[208], &r209 = r[209], &r210 = r[210], &r211 = r[211], &r212 = r[212], &r213 = r[213], &r214 = r[214], &r215 = r[215], &r216 = r[216], &r217 = r[217], &r218 = r[218], &r219 = r[219], &r220 = r[220], &r221 = r[221], &r222 = r[222], &r223 = r[223], &r224 = r[224], &r225 = r[225], &r226 = r[226], &r227 = r[227], &r228 = r[228], &r229 = r[229], &r230 = r[230], &r231 = r[231], &r232 = r[232], &r233 = r[233], &r234 = r[234], &r235 = r[235], &r236 = r[236], &r237 = r[237], &r238 = r[238], &r239 = r[239], &r240 = r[240], &r241 = r[241], &r242 = r[242], &r243 = r[243], &r244 = r[244], &r245 = r[245], &r246 = r[246], &r247 = r[247], &r248 = r[248], &r249 = r[249], \
 			&r250 = r[250], &r251 = r[251], &r252 = r[252], &r253 = r[253], &r254 = r[254], &r255 = r[255];\
 
-#define _END ;\
+#define _RAM_END ;\
 			__END:\
 			if (statusCode == 0) {\
 				if (countOfPrints++)\
 					cout << endl;\
 				cout << HALT_MESSAGE;\
 			}\
-			cin.get();\
-			cin.get();\
+			WAIT_AFTER_HALT\
 			return statusCode;}
 
 /* #include <iostream>

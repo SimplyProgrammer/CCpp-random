@@ -1,7 +1,7 @@
 // xhupkap
 
 #include "ram4cpp.hpp"
-_BEGIN(4) // We need 4 registers (including acc)
+int main() _RAM_BEGIN(4) // We need 4 registers (including acc)
 
 read r1
 load r1
@@ -56,7 +56,7 @@ loop:
 end:
 halt
 
-_END
+_RAM_END
 
 
 // C++ pseudocode representation...

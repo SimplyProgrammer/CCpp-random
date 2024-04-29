@@ -3,7 +3,7 @@
 */
 
 #include "ram4cpp.hpp"
-_BEGIN(-1) // -1 will default to 255 registers
+int main() _RAM_BEGIN(-1) // -1 will default to 255 registers
 
 read r101 // Count of numbers to load
 load r101
@@ -47,4 +47,4 @@ write r0 // Avg...
 
 halt
 
-_END
+_RAM_END
