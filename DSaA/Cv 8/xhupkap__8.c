@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-typedef unsigned short EdgeType;
+typedef unsigned int EdgeType;
 
 #define INF 0b1111111111111111
 

@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-typedef int EdgeType;
+typedef unsigned int EdgeType;
 typedef char byte;
 
 struct Node
@@ -15,7 +15,7 @@ typedef struct Node Node;
 
 struct Dist
 {
-	int dist, vert;
+	int weight, vert;
 };
 typedef struct Dist Dist;
 
@@ -30,7 +30,7 @@ typedef struct DistMinHeap DistMinHeap;
 #define left(i) (2*(i) + 1)
 #define right(i) (2*(i) + 2)
 
-#define INF 0xffff
+#define INF 0xffffffff
 
 #define CHECK_AND_FAIL(type, size, vert1, vert2, countOfPrints) if (vert1 == vert2 /*|| vert1 >= size || vert2 >= size || vert1 < 0 || vert2 < 0*/)\
 	{\
@@ -96,7 +96,7 @@ byte findAndDelete(Node** graph, int vert1, int vert2);
 byte findAndUpdate(Node** graph, int vert1, int vert2, int addW);
 
 void insert(Node** graph, int size, int vert1, int vert2, int weight, int* countOfPrints, byte checkForDups);
-void search(Node** graph, int size, int vert1, int vert2, int* countOfPrints);
+void search(Node** graph, int size, int startVert, int* countOfPrints);
 void delete(Node** graph, int size, int vert1, int vert2, int* countOfPrints);
 void update(Node** graph, int size, int vert1, int vert2, int addW, int* countOfPrints);
 
@@ -109,30 +109,30 @@ int main()
 
 	int countOfPrints = 0;
 
-	int vertCount, edgeCount;
-	scanf("%i %i", &vertCount, &edgeCount);
+	int vertCount;
+	scanf("%i", &vertCount);
 	getchar();
 
 	graph = calloc(vertCount, sizeof(Node*));
-	for (int i = 0; i < edgeCount; i++)
-	{
-		int vert1, vert2, weight;
-
-		char str[32] = {0};
-		fgets(str, sizeof(str), stdin);
-
-		if (sscanf(str, "(%i, %i, %i)", &vert1, &vert2, &weight) != 3)
-		{
-			failBasic("insert", &countOfPrints);
-			continue;
-		}
-
-		insert(graph, vertCount, vert1, vert2, weight, &countOfPrints, 0);
-	}
 
 	for (char option; (option = getchar()) != EOF; ) 
 	{
- 		if (option == 'i' || option == 'u')
+		if (option == '(')
+		{
+			int vert1 = -1, vert2 = -1, weight = -1;
+
+			char str[32] = {0};
+			fgets(str, sizeof(str), stdin);
+
+			if (sscanf(str, "%i, %i, %i)", &vert1, &vert2, &weight) != 3)
+			{
+				failBasic("insert", &countOfPrints);
+				continue;
+			}
+
+			insert(graph, vertCount, vert1, vert2, weight, &countOfPrints, 0);
+		}
+ 		else if (option == 'i' || option == 'u')
 		{
 			int vert1 = -1, vert2 = -1, weight = -1;
 			if (scanf3int(&vert1, &vert2, &weight) != 3)
@@ -146,26 +146,32 @@ int main()
 			else
 				update(graph, vertCount, vert1, vert2, weight, &countOfPrints);
 		}
-		else if (option == 's' || option == 'd')
+		else if (option == 's')
+		{
+			int startVert = -1, _;
+			if (scanf3int(&startVert, &_, &_) != 1)
+			{
+				failBasic("search", &countOfPrints);
+				continue;
+			}
+
+			search(graph, vertCount, startVert, &countOfPrints);
+		}
+		else if (option == 'd')
 		{
 			int vert1 = -1, vert2 = -1, _;
 			if (scanf3int(&vert1, &vert2, &_) != 2)
 			{
-				failBasic(option == 's' ? "search" : "delete", &countOfPrints);
+				failBasic("delete", &countOfPrints);
 				continue;
 			}
 
-			if (option == 's')
-				search(graph, vertCount, vert1, vert2, &countOfPrints);
-			else
-				delete(graph, vertCount, vert1, vert2, &countOfPrints);
+			delete(graph, vertCount, vert1, vert2, &countOfPrints);
 		}
-		// else if (option == 'p' || option == 'f')
-		// {
-		// 	printListGraph(graph, vertCount, option == 'f');
-		// }
-		// else if (option == 'q')
-		// 	break;
+		else if (option == 'p' || option == 'f')
+		{
+			printListGraph(graph, vertCount, option == 'f');
+		}
 	}
 
 	freeGraph(graph, vertCount);
@@ -223,10 +229,10 @@ void insertDist(DistMinHeap* distHeap, Dist dist)
 		distHeap->arr = realloc(distHeap->arr, (distHeap->capacity *= 2) * sizeof(Dist));
 
 	int i = distHeap->size++;
-	distHeap->arr[i] = (Dist) { dist.dist, dist.vert };
+	distHeap->arr[i] = (Dist) { dist.weight, dist.vert };
 
 	// Keep min heap ordered...
-	for (int par; i && distHeap->arr[par = parent(i)].dist > distHeap->arr[i].dist; i = parent(i)) 
+	for (int par; i && distHeap->arr[par = parent(i)].weight > distHeap->arr[i].weight; i = parent(i)) 
 		swap(&distHeap->arr[i], &distHeap->arr[par]);
 }
 
@@ -234,10 +240,10 @@ void reheapify(DistMinHeap* distHeap, int i)
 {
 	int min = i, left = left(i), right = right(i);
 
-	if (left < distHeap->size && distHeap->arr[left].dist < distHeap->arr[min].dist)
+	if (left < distHeap->size && distHeap->arr[left].weight < distHeap->arr[min].weight)
 		min = left;
 
-	if (right < distHeap->size && distHeap->arr[right].dist < distHeap->arr[min].dist)
+	if (right < distHeap->size && distHeap->arr[right].weight < distHeap->arr[min].weight)
 		min = right;
 
 	if (min == i) 
@@ -261,59 +267,51 @@ Dist popMin(DistMinHeap* distHeap)
 	return min;
 }
 
-void search(Node** graph, int size, int vert1, int vert2, int* countOfPrints) // Dijkstra...
+void search(Node** graph, int size, int startVert, int* countOfPrints) 
 {
-	CHECK_AND_FAIL_BASIC("search", size, vert1, vert2, countOfPrints);
+int totalWeight = 0;
 
 	DistMinHeap minDist = {0};
 	minDist.arr = malloc((minDist.capacity = size) * sizeof(Dist));
 
-	int* dists = malloc(size * sizeof(int)); // Distances to each vector
-	int* shortestPath = malloc(size * sizeof(int));
-	// byte* visited = malloc(size * sizeof(byte));
+	int* mstIndexes = malloc(size * sizeof(int));
 
-	for (int i = 0; i < size; i++)
-	{
-		shortestPath[i] = -1;
-		dists[i] = INF;
-		// visited[i] = 0;
-	}
+	for (int i = 0; i < size; ++i)
+		mstIndexes[i] = -1;
 
-	minDist.arr[minDist.size++] = (Dist) { 0, vert1 };
-	dists[vert1] = 0;
+	minDist.arr[minDist.size++] = (Dist) { 0, startVert };
 
 	for (; minDist.size; )
 	{
 		Dist min = popMin(&minDist);
-		// visited[min->vert] = 1;
+
+		if (mstIndexes[min.vert] != -1) // Was visited
+			continue;
+
+		mstIndexes[min.vert] = min.weight;
+		totalWeight += min.weight;
 
 		for (Node* curr = graph[min.vert]; curr; curr = curr->next) 
 		{
 			int dest = curr->dest;
-			if (/*!visited[dest] &&*/ dists[min.vert] + curr->weight < dists[dest]) 
-			{
-				insertDist(&minDist, (Dist) { dists[dest] = dists[min.vert] + curr->weight, dest });
-
-				shortestPath[dest] = min.vert;
-			}
+			if (mstIndexes[dest] == -1) // Wasnt visited
+				insertDist(&minDist, (Dist) { curr->weight, dest });
 		}
 	}
 
-	if (shortestPath[vert2] == -1)
-		goto fail;
-	else
-	{
-		if ((*countOfPrints)++)
-			printf("\n");
-		printf("%i: [", dists[vert2]);
-		printPath(shortestPath, vert1, vert2);
-		printf("]");
+	// Print MST weight
+	printf("MST Weight: %i\n", totalWeight);
+
+	// Print MST edges
+	printf("MST Edges:\n");
+	for (int i = 0; i < size; i++) {
+		if (mstIndexes[i] != -1) {
+			printf("(%i, %i)\n", mstIndexes[i], i);
+		}
 	}
 
+	free(mstIndexes);
 	free(minDist.arr);
-	free(dists);
-	free(shortestPath);
-	// free(visited);
 }
 
 Node* deleteAndReorderLinks(Node** head, Node* curr, Node* prevNode)

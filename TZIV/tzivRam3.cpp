@@ -59,7 +59,7 @@ halt
 _END
 
 
-// C++ representation...
+// C++ pseudocode representation...
 /*
 int main() 
 {
