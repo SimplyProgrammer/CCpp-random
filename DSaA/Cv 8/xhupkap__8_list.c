@@ -207,21 +207,21 @@ void insert(Node** graph, int size, int vert1, int vert2, int weight, int* count
 	graph[vert2] = node; 
 }
 
-// Dist* unshiftQ(Dist* head, Dist* node) // Add elm, keep smlst at the beginning
-// {
-// 	if (!head || node->dist < head->dist)
-// 	{
-// 		node->next = head; 
-// 		return node; // DO NOT FORGET TO SET HEAD AFTER CALLING!!
-// 	}
+Node* unshiftQ(Node* head, Node* node) // Add elm, keep smlst at the beginning
+{
+	if (!head || node->weight < head->weight)
+	{
+		node->next = head; 
+		return node; // DO NOT FORGET TO SET HEAD AFTER CALLING!!
+	}
 
-// 	Dist* curr = head;
-// 	for (; curr->next && curr->next->dist < node->dist; curr = curr->next); // Find the suitable spot...
+	Node* curr = head;
+	for (; curr->next && curr->next->weight < node->weight; curr = curr->next); // Find the suitable spot...
 
-// 	node->next = curr->next;
-// 	curr->next = node;
-// 	return head;
-// }
+	node->next = curr->next;
+	curr->next = node;
+	return head;
+}
 
 void insertDist(DistMinHeap* distHeap, Dist dist) 
 {
@@ -269,15 +269,19 @@ Dist popMin(DistMinHeap* distHeap)
 
 void search(Node** graph, int size, int startVert, int* countOfPrints) 
 {
-int totalWeight = 0;
+	int totalWeight = 0;
 
 	DistMinHeap minDist = {0};
 	minDist.arr = malloc((minDist.capacity = size) * sizeof(Dist));
 
-	int* mstIndexes = malloc(size * sizeof(int));
+	byte* visited = malloc(size * sizeof(byte));
+	int* parent = malloc(size * sizeof(int));
 
 	for (int i = 0; i < size; ++i)
-		mstIndexes[i] = -1;
+	{
+		visited[i] = 0;
+		parent[i] = -1;
+	}
 
 	minDist.arr[minDist.size++] = (Dist) { 0, startVert };
 
@@ -285,32 +289,39 @@ int totalWeight = 0;
 	{
 		Dist min = popMin(&minDist);
 
-		if (mstIndexes[min.vert] != -1) // Was visited
+		if (visited[min.vert]) // Was visited
 			continue;
 
-		mstIndexes[min.vert] = min.weight;
+		visited[min.vert] = 1;
 		totalWeight += min.weight;
 
-		for (Node* curr = graph[min.vert]; curr; curr = curr->next) 
+		for (Node* curr = graph[min.vert]; curr; curr = curr->next) // Find next unvisited verts from graph
 		{
 			int dest = curr->dest;
-			if (mstIndexes[dest] == -1) // Wasnt visited
+			if (!visited[dest]) // Wasnt visited
+			{
+				parent[dest] = min.vert;
 				insertDist(&minDist, (Dist) { curr->weight, dest });
+			}
 		}
 	}
 
-	// Print MST weight
-	printf("MST Weight: %i\n", totalWeight);
-
-	// Print MST edges
-	printf("MST Edges:\n");
-	for (int i = 0; i < size; i++) {
-		if (mstIndexes[i] != -1) {
-			printf("(%i, %i)\n", mstIndexes[i], i);
+	if ((*countOfPrints)++)
+		printf("\n");
+	printf("%i: [", totalWeight);
+	for (int i = 0, count = 0; i < size; i++)
+	{
+		if (parent[i] != -1)
+		{
+			if (count++)
+				printf(", ");
+			printf("(%i, %i)", parent[i], i);
 		}
 	}
+	printf("]");
 
-	free(mstIndexes);
+	free(visited);
+	free(parent);
 	free(minDist.arr);
 }
 
