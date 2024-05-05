@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-typedef unsigned int EdgeType;
+typedef long long EdgeType;
 typedef char byte;
 
 struct Node
@@ -13,24 +13,26 @@ struct Node
 };
 typedef struct Node Node;
 
-struct Dist
+struct Edge
 {
-	int weight, vert;
+	int vert1; // From
+	EdgeType weight;
+	int vert2; // To
 };
-typedef struct Dist Dist;
+typedef struct Edge Edge;
 
-struct DistMinHeap {
-	Dist* arr;
+struct EdgeHeap {
+	Edge* arr;
 
 	unsigned int size, capacity;
 };
-typedef struct DistMinHeap DistMinHeap;
+typedef struct EdgeHeap EdgeHeap;
 
 #define parent(i) ((i) - 1) / 2
 #define left(i) (2*(i) + 1)
 #define right(i) (2*(i) + 2)
 
-#define INF 0xffffffff
+#define numComparator(a, b) (a > b ? 1 : (a == b ? 0 : -1))
 
 #define CHECK_AND_FAIL(type, size, vert1, vert2, countOfPrints) if (vert1 == vert2 /*|| vert1 >= size || vert2 >= size || vert1 < 0 || vert2 < 0*/)\
 	{\
@@ -62,35 +64,34 @@ void printListGraph(Node** graph, int size, byte minimal)
 	printf("%i\n", edgeCount);
 }
 
-// void printMinHeap(DistMinHeap heap)
-// {
-// 	printf("%i/%i:\n", heap.size, heap.capacity);
-// 	for (int i = 0; i < heap.size; i++)
-// 		printf("%i ", heap.arr[i].dist);
-// 	printf("\n");
-// }
-
-void swap(Dist* a, Dist* b) 
+void swap(Edge* a, Edge* b) 
 {
-	Dist temp = *a;
+	Edge temp = *a;
 	*a = *b;
 	*b = temp;
 }
+
+#define normalizeEdge(edge) (edge.vert1 > edge.vert2 ? ((Edge) { edge.vert2, edge.weight, edge.vert1 }) : edge)
 
 int scanf3int(void* arg1, void* arg2, void* arg3);
 void failBasic(char* str, int* countOfPrints);
 void fail(char* str, int vert1, int vert2, int* countOfPrints);
 void freeGraph(Node** graph, int size);
 
-void printPath(int* shortestPath, int vert1, int vert2);
+int edgeWeightComparator(Edge, Edge);
+int edgeVertComparator(Edge, Edge);
+// int negEdgeVertComparator(Edge, Edge);
 
 Node* newNode(EdgeType weight, int dest);
-// Dist* unshiftQ(Dist* head, Dist* node);
+// Edge* unshiftQ(Edge* head, Edge* node);
 Node* deleteAndReorderLinks(Node** head, Node* curr, Node* prevNode);
 
-void insertDist(DistMinHeap*, Dist);
-void reheapify(DistMinHeap*, int);
-Dist popMin(DistMinHeap*);
+void insertEdge(EdgeHeap*, Edge, int (*comparator)(Edge, Edge));
+void reheapify(EdgeHeap*, int, int, int (*comparator)(Edge, Edge));
+Edge popMin(EdgeHeap*, int (*comparator)(Edge, Edge));
+
+// void sortEdges(Edge*, int, int (*comparator)(Edge, Edge));
+void sortEdges(Edge*, int, int, int (*comparator)(Edge, Edge));
 
 byte findAndDelete(Node** graph, int vert1, int vert2);
 byte findAndUpdate(Node** graph, int vert1, int vert2, int addW);
@@ -168,10 +169,10 @@ int main()
 
 			delete(graph, vertCount, vert1, vert2, &countOfPrints);
 		}
-		else if (option == 'p' || option == 'f')
-		{
-			printListGraph(graph, vertCount, option == 'f');
-		}
+		// else if (option == 'p' || option == 'f')
+		// {
+		// 	printListGraph(graph, vertCount, option == 'f');
+		// }
 	}
 
 	freeGraph(graph, vertCount);
@@ -207,111 +208,151 @@ void insert(Node** graph, int size, int vert1, int vert2, int weight, int* count
 	graph[vert2] = node; 
 }
 
-// Dist* unshiftQ(Dist* head, Dist* node) // Add elm, keep smlst at the beginning
-// {
-// 	if (!head || node->dist < head->dist)
-// 	{
-// 		node->next = head; 
-// 		return node; // DO NOT FORGET TO SET HEAD AFTER CALLING!!
-// 	}
-
-// 	Dist* curr = head;
-// 	for (; curr->next && curr->next->dist < node->dist; curr = curr->next); // Find the suitable spot...
-
-// 	node->next = curr->next;
-// 	curr->next = node;
-// 	return head;
-// }
-
-void insertDist(DistMinHeap* distHeap, Dist dist) 
+void insertEdge(EdgeHeap* distHeap, Edge dist, int (*comparator)(Edge, Edge)) 
 {
 	if (distHeap->size >= distHeap->capacity)
-		distHeap->arr = realloc(distHeap->arr, (distHeap->capacity *= 2) * sizeof(Dist));
+		distHeap->arr = realloc(distHeap->arr, (distHeap->capacity *= 2) * sizeof(Edge));
 
 	int i = distHeap->size++;
-	distHeap->arr[i] = (Dist) { dist.weight, dist.vert };
+	distHeap->arr[i] = (Edge) { dist.vert1, dist.weight, dist.vert2 };
 
 	// Keep min heap ordered...
-	for (int par; i && distHeap->arr[par = parent(i)].weight > distHeap->arr[i].weight; i = parent(i)) 
+	for (int par; i && comparator(distHeap->arr[par = parent(i)], distHeap->arr[i]) > 0; i = parent(i)) 
 		swap(&distHeap->arr[i], &distHeap->arr[par]);
 }
 
-void reheapify(DistMinHeap* distHeap, int i)
+void reheapify(EdgeHeap* distHeap, int i, int size, int (*comparator)(Edge, Edge))
 {
 	int min = i, left = left(i), right = right(i);
+	if (size < 0)
+		size = distHeap->size;
 
-	if (left < distHeap->size && distHeap->arr[left].weight < distHeap->arr[min].weight)
+	if (left < size && comparator(distHeap->arr[left], distHeap->arr[min]) < 0)
 		min = left;
 
-	if (right < distHeap->size && distHeap->arr[right].weight < distHeap->arr[min].weight)
+	if (right < size && comparator(distHeap->arr[right], distHeap->arr[min]) < 0)
 		min = right;
 
 	if (min == i) 
 		return;
 	swap(&distHeap->arr[i], &distHeap->arr[min]);
-	reheapify(distHeap, min);
+	reheapify(distHeap, min, size, comparator);
 }
 
-Dist popMin(DistMinHeap* distHeap) 
+Edge popMin(EdgeHeap* distHeap, int (*comparator)(Edge, Edge)) 
 {
 	if (!distHeap->size)
-		return (Dist) {-1, -1};
+		return (Edge) {-1, -1, -1};
 
 	if (distHeap->size == 1)
 		return distHeap->arr[--distHeap->size];
 
-	Dist min = distHeap->arr[0];
+	Edge min = distHeap->arr[0];
 	distHeap->arr[0] = distHeap->arr[--distHeap->size];
-	reheapify(distHeap, 0);
+	reheapify(distHeap, 0, -1, comparator);
 
 	return min;
 }
 
+// void sortEdges(Edge* arr, int size, int (*comparator)(Edge, Edge)) // Heap sort
+// {
+// 	EdgeHeap maxHeap = { arr, size };
+// 	for (int i = size / 2 - 1; i >= 0; i--)
+// 		reheapify(&maxHeap, i, size, comparator);
+
+// 	for (int i = size - 1; i >= 0; i--) 
+// 	{
+// 		swap(&maxHeap.arr[0], &maxHeap.arr[i]);
+
+// 		reheapify(&maxHeap, 0, i, comparator);
+// 	}
+// }
+
+void sortEdges(Edge* arr, int from, int to, int (*comparator)(Edge, Edge)) // Qsort
+{
+	if (from >= to)
+		return;
+
+	Edge pivot = arr[to];
+
+	int left = from, right = to - 1; // Partitioning
+	while (left < right) // Move everything smaller than pivot to left and everything grater to the right...
+	{
+		for (; left < right && comparator(arr[left], pivot) < 0; left++);
+
+		for (; left < right && comparator(arr[right], pivot) > 0; right--);
+
+		swap(&arr[left], &arr[right]);
+	}
+
+	if (comparator(arr[left], arr[to]) > 0) // Edge case when first and last elm are not sorted...
+		swap(&arr[left], &arr[to]);
+	else
+		left = to;
+
+	sortEdges(arr, from, left-1, comparator);
+	sortEdges(arr, left+1, to, comparator);
+}
+
 void search(Node** graph, int size, int startVert, int* countOfPrints) 
 {
-int totalWeight = 0;
+	unsigned long long totalWeight = 0;
 
-	DistMinHeap minDist = {0};
-	minDist.arr = malloc((minDist.capacity = size) * sizeof(Dist));
+	EdgeHeap minEdges = {0};
+	minEdges.arr = malloc((minEdges.capacity = size) * sizeof(Edge));
 
-	int* mstIndexes = malloc(size * sizeof(int));
+	int mstSize = 0;
+	Edge* mst = malloc(size * sizeof(Edge));
 
-	for (int i = 0; i < size; ++i)
-		mstIndexes[i] = -1;
+	byte* visited = calloc(size, sizeof(byte));
 
-	minDist.arr[minDist.size++] = (Dist) { 0, startVert };
+	minEdges.arr[minEdges.size++] = (Edge) { -1, 0, startVert };
 
-	for (; minDist.size; )
+	for (; minEdges.size && mstSize < size-1; )
 	{
-		Dist min = popMin(&minDist);
+		Edge min = popMin(&minEdges, edgeWeightComparator);
 
-		if (mstIndexes[min.vert] != -1) // Was visited
+		if (visited[min.vert2]) // Was visited
 			continue;
 
-		mstIndexes[min.vert] = min.weight;
-		totalWeight += min.weight;
+		visited[min.vert2] = 1;
+		if (min.vert1 != -1)
+		{
+			totalWeight += min.weight;
+			mst[mstSize++] = normalizeEdge(min);
+		}
 
-		for (Node* curr = graph[min.vert]; curr; curr = curr->next) 
+		for (Node* curr = graph[min.vert2]; curr; curr = curr->next) // Find next unvisited verts from graph
 		{
 			int dest = curr->dest;
-			if (mstIndexes[dest] == -1) // Wasnt visited
-				insertDist(&minDist, (Dist) { curr->weight, dest });
+			if (!visited[dest]) // Wasnt visited
+				insertEdge(&minEdges, (Edge) { min.vert2, curr->weight, dest }, edgeWeightComparator);
 		}
 	}
 
-	// Print MST weight
-	printf("MST Weight: %i\n", totalWeight);
-
-	// Print MST edges
-	printf("MST Edges:\n");
-	for (int i = 0; i < size; i++) {
-		if (mstIndexes[i] != -1) {
-			printf("(%i, %i)\n", mstIndexes[i], i);
-		}
+	if (!mstSize)
+	{
+		fail("search", startVert, -2, countOfPrints);
+		goto end;
 	}
 
-	free(mstIndexes);
-	free(minDist.arr);
+	sortEdges(mst, 0, mstSize-1, edgeVertComparator);
+
+	if ((*countOfPrints)++)
+		printf("\n");
+	printf("%llu: [", totalWeight);
+	for (int i = 0, count = 0; i < mstSize; i++)
+	{
+		if (count++)
+			printf(", ");
+		printf("(%d, %d)", mst[i].vert1, mst[i].vert2);
+	}
+	printf("]");
+
+	end:
+	free(visited);
+	free(mst);
+	free(minEdges.arr);
 }
 
 Node* deleteAndReorderLinks(Node** head, Node* curr, Node* prevNode)
@@ -353,7 +394,9 @@ byte findAndUpdate(Node** graph, int vert1, int vert2, int addW) // Find and upd
 		if (curr->dest == vert2)
 		{
 			if (curr->weight + addW < 0)
+			{
 				return 0;
+			}
 			curr->weight += addW;
 
 			// graph[vert1] = unshiftQ(graph[vert1], deleteAndReorderLinks(&graph[vert1], curr, prevNode), 0);
@@ -373,16 +416,24 @@ void update(Node** graph, int size, int vert1, int vert2, int addW, int* countOf
 		goto fail;
 }
 
-void printPath(int* shortestPath, int vert1, int vert2) 
+int edgeWeightComparator(Edge e1, Edge e2)
 {
-	if (vert1 == vert2)
-		printf("%i", vert1);
-	else
-	{
-		printPath(shortestPath, vert1, shortestPath[vert2]);
-		printf(", %i", vert2);
-	}
+	return numComparator(e1.weight, e2.weight);
 }
+
+int edgeVertComparator(Edge e1, Edge e2)
+{
+	if (e1.vert1 > e2.vert1)
+		return 1;
+	if (e1.vert1 < e2.vert1)
+		return -1;
+	return numComparator(e1.vert2, e2.vert2);
+}
+
+// int negEdgeVertComparator(Edge e1, Edge e2)
+// {
+// 	return -edgeVertComparator(e1, e2);
+// }
 
 int scanf3int(void* arg1, void* arg2, void* arg3) //No blocking, not biased scanf that returns count of tokens
 {
@@ -403,7 +454,7 @@ void fail(char* str, int vert1, int vert2, int* countOfPrints)
 {
 	if ((*countOfPrints)++)
 		printf("\n");
-	printf("%s %i %i failed", str, vert1, vert2);
+	printf(vert2 < -1 ? "%s %i failed" : "%s %i %i failed", str, vert1, vert2);
 }
 
 void freeGraph(Node** graph, int size)

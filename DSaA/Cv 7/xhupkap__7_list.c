@@ -102,8 +102,8 @@ void update(Node** graph, int size, int vert1, int vert2, int addW, int* countOf
 
 int main()
 {
-	// freopen("input.txt", "r", stdin);
-	// freopen("output.txt", "w", stdout);
+	freopen("input.txt", "r", stdin);
+	freopen("output.txt", "w", stdout);
 
 	Node** graph;
 

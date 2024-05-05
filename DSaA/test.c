@@ -65,6 +65,14 @@ void dijkstra(int graph[V][V], int src)
 // driver's code
 int main()
 {
+	unsigned char uint32 = 0;
+	for (int i = 0; i < 500; i++)
+	{
+		printf("%i\n", uint32);
+		uint32++;
+	}
+	
+
 	/* Let us create the example graph discussed above */
 	int graph[V][V] = { { 0, 4, 0, 0, 0, 0, 0, 8, 0 },
 						{ 4, 0, 8, 0, 0, 0, 0, 11, 0 },
@@ -77,7 +85,7 @@ int main()
 						{ 0, 0, 2, 0, 0, 0, 6, 7, 0 } };
 
 	// Function call
-	dijkstra(graph, 0);
+	// dijkstra(graph, 0);
 
 	return 0;
 }
