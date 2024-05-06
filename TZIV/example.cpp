@@ -1,5 +1,6 @@
 /**
- * This example will load specified amount of numbers from input and then output the sum and integer avg of these numbers!
+ * Example 1
+ * This example will load specified amount of numbers (max 99) from input and then output the sum and integer avg of these numbers!
 */
 
 #include "ram4cpp.hpp"
