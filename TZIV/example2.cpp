@@ -32,6 +32,7 @@ int main() _RAM_BEGIN(-1) // -1 will default to 255 registers
 read r1 // N
 
 read r2 // K
+load r2
 store r3; // r3 = r2 (input K)
 
 loop:
