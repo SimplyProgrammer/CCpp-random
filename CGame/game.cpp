@@ -51,6 +51,8 @@ int main()
 	Game gm = {0};
 	printf("\e[?25l"); // Hide cursor
 
+	const volatile static unsigned const long long const int lol = 5; // I guess this one is not changing...
+
 	mainMenu: string menuOptions[4] = {"New game", gm.map || _access("save.txt", 0) == 0 ? "Continue" : "\n" , "\n", "Quit"};
 	switch (openWindow(0, 0, menuOptions, 4, "ONES AND ZEROS"))
 	{
